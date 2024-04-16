@@ -21,4 +21,4 @@ RUN cargo build --release
 EXPOSE 80
 
 # Set the entry point to run the compiled binary when the container starts
-CMD ["cargo", "run"]
+CMD ["./target/release/dev-bot"]

@@ -1,6 +1,8 @@
 use tokio::signal;
 
-mod executor;
+mod redis_server;
+mod bot;
+mod web_server;
 
 #[tokio::main]
 async fn main() {
@@ -13,9 +15,9 @@ async fn main() {
         .init();
 
     // Executor client daemon
-    tokio::spawn(executor::redis::execute());
-    tokio::spawn(executor::bot::execute());
-    tokio::spawn(executor::web::execute());
+    tokio::spawn(redis_server::execute());
+    tokio::spawn(bot::execute());
+    tokio::spawn(web_server::execute());
 
     tokio::select! {
         _ = sigterm.recv() => {
