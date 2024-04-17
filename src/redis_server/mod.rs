@@ -1,3 +1,5 @@
+mod redis_value;
+
 use log::info;
 
 pub async fn execute() {
