@@ -7,7 +7,6 @@ use crate::is_shutdown_flag_set;
 
 const TOKEN: &str = include_str!("../../secrets/token.txt");
 
-
 struct Handler;
 
 #[async_trait]
