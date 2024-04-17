@@ -3,7 +3,7 @@ FROM archlinux/archlinux
 
 # Update package repositories and install necessary dependencies
 RUN pacman -Syu --noconfirm && \
-    pacman -S --noconfirm base-devel rustup redis gcc
+    pacman -S --noconfirm base-devel rustup gcc
 
 # Set working directory for the application
 WORKDIR /app
