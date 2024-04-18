@@ -5,6 +5,7 @@ use tokio::signal;
 mod redis_server;
 mod bot;
 mod web_server;
+mod string_manip;
 
 lazy_static::lazy_static! {
     static ref SHUTDOWN_FLAG: AtomicBool = AtomicBool::new(false);

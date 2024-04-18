@@ -1,4 +1,5 @@
 mod redis_value;
+mod command;
 
 use log::info;
 
