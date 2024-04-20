@@ -1,5 +1,6 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use log::info;
 use tokio::signal;
 
 mod redis_server;
@@ -29,6 +30,7 @@ async fn main() {
     env_logger::Builder::new()
         .filter_level(log::LevelFilter::Info)
         .filter_module("serenity", log::LevelFilter::Error)
+        .filter_module("tracing", log::LevelFilter::Error)
         .init();
 
     // Executor client daemon
@@ -39,12 +41,12 @@ async fn main() {
     tokio::select! {
         _ = sigterm.recv() => {
             // Handle SIGTERM (e.g., perform cleanup)
-            println!("Received SIGTERM, shutting down gracefully...");
+            info!("Received SIGTERM, shutting down gracefully...");
             set_shutdown_flag();
         }
         _ = sigint.recv() => {
             // Handle SIGINT (e.g., perform cleanup)
-            println!("Received SIGINT, shutting down gracefully...");
+            info!("Received SIGINT, shutting down gracefully...");
             set_shutdown_flag();
         }
     }
