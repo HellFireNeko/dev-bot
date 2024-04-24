@@ -3,6 +3,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use log::info;
 use tokio::signal;
 
+#[allow(dead_code)]
 mod redis_server;
 mod bot;
 mod web_server;

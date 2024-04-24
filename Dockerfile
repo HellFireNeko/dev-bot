@@ -3,7 +3,7 @@ FROM archlinux/archlinux
 
 # Update package repositories and install necessary dependencies
 RUN pacman -Syu --noconfirm && \
-    pacman -S --noconfirm base-devel rustup gcc
+    pacman -S --noconfirm base-devel rustup gcc nodejs
 
 # Set working directory for the application
 WORKDIR /app

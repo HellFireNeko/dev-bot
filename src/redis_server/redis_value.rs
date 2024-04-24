@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::string_manip::{consume_crlf, consume_n_chars, consume_until_crlf};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum RedisValue {
     SimpleString(String),
     SimpleError(String),
@@ -200,10 +200,10 @@ impl RedisValue {
                 match consume_until_crlf(iter) {
                     Ok(value) => {
                         match value.as_str() {
-                            "t" => {
+                            "#t" => {
                                 RedisValue::Boolean(true)
                             }
-                            "f" => {
+                            "#f" => {
                                 RedisValue::Boolean(false)
                             }
                             _ => RedisValue::SimpleError("No valid boolean found".to_string())
