@@ -1,13 +1,16 @@
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::{
+    sync::atomic::{AtomicBool, Ordering},
+    time::Duration,
+};
 
 use log::info;
 use tokio::signal;
 
+mod bot;
 #[allow(dead_code)]
 mod redis_server;
-mod bot;
-mod web_server;
 mod string_manip;
+mod web_server;
 
 lazy_static::lazy_static! {
     static ref SHUTDOWN_FLAG: AtomicBool = AtomicBool::new(false);
@@ -39,16 +42,29 @@ async fn main() {
     tokio::spawn(bot::execute());
     tokio::spawn(web_server::execute());
 
-    tokio::select! {
-        _ = sigterm.recv() => {
-            // Handle SIGTERM (e.g., perform cleanup)
-            info!("Received SIGTERM, shutting down gracefully...");
-            set_shutdown_flag();
+    'sigloop: loop {
+        // Check if the Shutdown flag got set either from bot or from web
+        if is_shutdown_flag_set() {
+            info!("Shutdown requested by external source, shutting down gracefully...");
+            break 'sigloop; // Exit sigloop
         }
-        _ = sigint.recv() => {
-            // Handle SIGINT (e.g., perform cleanup)
-            info!("Received SIGINT, shutting down gracefully...");
-            set_shutdown_flag();
+
+        tokio::select! {
+            _ = sigterm.recv() => {
+                // Handle SIGTERM (e.g., perform cleanup)
+                info!("Received SIGTERM, shutting down gracefully...");
+                set_shutdown_flag();
+                break 'sigloop; // Exit sigloop
+            }
+            _ = sigint.recv() => {
+                // Handle SIGINT (e.g., perform cleanup)
+                info!("Received SIGINT, shutting down gracefully...");
+                set_shutdown_flag();
+                break 'sigloop; // Exit sigloop
+            }
+            _ = tokio::time::sleep(Duration::from_secs(1)) => {
+                continue 'sigloop; // Continue sigloop
+            }
         }
     }
 }
