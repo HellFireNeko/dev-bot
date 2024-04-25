@@ -75,13 +75,13 @@ async fn fready(ctx: Context, _ready: Ready) {
     while !is_shutdown_flag_set() {
         time::sleep(Duration::from_secs(1)).await;
     }
+    
+    ctx.shard.set_status(serenity::all::OnlineStatus::Offline);
 
     ctx.shard.shutdown_clean();
 }
 
 pub async fn execute() {
-    info!("Hello from the bot thread!");
-    
     let intents =
         GatewayIntents::GUILD_MESSAGES |
         GatewayIntents::DIRECT_MESSAGES |

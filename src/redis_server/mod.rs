@@ -8,7 +8,7 @@ use self::redis_value::RedisValue;
 pub async fn execute() {
     info!("Hello from the redis thread!");
     
-    test().await;
+    //test().await;
 }
 
 // A simple function designed to help me test the RESP values and other features
