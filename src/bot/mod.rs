@@ -1,10 +1,13 @@
 mod commands;
 
+use std::time::Duration;
+
 use log::{error, info};
 use serenity::all::{CreateInteractionResponse, CreateInteractionResponseMessage, Interaction};
 use serenity::async_trait;
 use serenity::model::gateway::Ready;
 use serenity::prelude::*;
+use tokio::time;
 
 use crate::bot::commands::register;
 use crate::{is_shutdown_flag_set, set_shutdown_flag};
@@ -69,12 +72,11 @@ async fn fready(ctx: Context, _ready: Ready) {
     
     register(&ctx).await;
 
-    loop {
-        if is_shutdown_flag_set() {
-            ctx.shard.shutdown_clean();
-            break;
-        }
+    while !is_shutdown_flag_set() {
+        time::sleep(Duration::from_secs(1)).await;
     }
+
+    ctx.shard.shutdown_clean();
 }
 
 pub async fn execute() {
