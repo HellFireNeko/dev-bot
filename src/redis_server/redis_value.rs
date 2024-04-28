@@ -26,47 +26,42 @@ impl RedisValue {
         match self {
             RedisValue::SimpleString(text) => {
                 format!("+{text}\r\n")
-            },
+            }
             RedisValue::SimpleError(text) => {
                 format!("-{text}\r\n")
-            },
+            }
             RedisValue::Integer(num) => {
                 format!(":{num}\r\n")
-            },
+            }
             RedisValue::BulkString(text) => {
                 format!("${}\r\n{}\r\n", text.len(), text)
-            },
-            RedisValue::NullBulkString => {
-                "$-1\r\n".into()
-            },
+            }
+            RedisValue::NullBulkString => "$-1\r\n".into(),
             RedisValue::Array(vec) => {
                 let mut string = String::new();
                 string.push_str(&format!("*{}\r\n", vec.len()));
-                vec.into_iter().for_each(|item| string.push_str(&item.to_resp()));
+                vec.into_iter()
+                    .for_each(|item| string.push_str(&item.to_resp()));
                 string
-            },
-            RedisValue::NullArray => {
-                "*-1\r\n".into()
-            },
-            RedisValue::Null => {
-                "_\r\n".into()
-            },
+            }
+            RedisValue::NullArray => "*-1\r\n".into(),
+            RedisValue::Null => "_\r\n".into(),
             RedisValue::Boolean(value) => {
                 if *value {
                     "#t\r\n".into()
                 } else {
                     "#f\r\n".into()
                 }
-            },
+            }
             RedisValue::BigInteger(num) => {
                 format!("({num}\r\n")
-            },
+            }
             RedisValue::BulkError(text) => {
                 format!("!{}\r\n{}\r\n", text.len(), text)
-            },
+            }
             RedisValue::VerbatimString(encoding, text) => {
                 format!("={}\r\n{}:{}\r\n", text.len(), encoding, text)
-            },
+            }
             RedisValue::Map(map) => {
                 let mut string = String::new();
                 string.push_str(&format!("&{}\r\n", map.len()));
@@ -75,7 +70,7 @@ impl RedisValue {
                     string.push_str(&value.to_resp());
                 });
                 string
-            },
+            }
             RedisValue::Set(set) => {
                 let mut string = String::new();
                 string.push_str(&format!("~{}\r\n", set.len()));
@@ -88,13 +83,14 @@ impl RedisValue {
                     string.push_str(&item_str)
                 }
                 string
-            },
+            }
             RedisValue::Push(push) => {
                 let mut string = String::new();
                 string.push_str(&format!(">{}\r\n", push.len()));
-                push.into_iter().for_each(|item| string.push_str(&item.to_resp()));
+                push.into_iter()
+                    .for_each(|item| string.push_str(&item.to_resp()));
                 string
-            },
+            }
         }
     }
 
@@ -111,7 +107,7 @@ impl RedisValue {
                 iter.next();
                 match consume_until_crlf(iter) {
                     Ok(value) => RedisValue::SimpleString(value),
-                    Err(err) => RedisValue::SimpleError(err)
+                    Err(err) => RedisValue::SimpleError(err),
                 }
             }
             Some('-') => {
@@ -119,20 +115,18 @@ impl RedisValue {
                 iter.next();
                 match consume_until_crlf(iter) {
                     Ok(value) => RedisValue::SimpleError(value),
-                    Err(err) => RedisValue::SimpleError(err)
+                    Err(err) => RedisValue::SimpleError(err),
                 }
             }
             Some(':') => {
                 // Integer
                 iter.next();
                 match consume_until_crlf(iter) {
-                    Ok(value) => {
-                        match value.parse() {
-                            Ok(value) => RedisValue::Integer(value),
-                            Err(_) => RedisValue::SimpleError("Could not parse as Integer".to_string())
-                        }
-                    }
-                    Err(err) => RedisValue::SimpleError(err)
+                    Ok(value) => match value.parse() {
+                        Ok(value) => RedisValue::Integer(value),
+                        Err(_) => RedisValue::SimpleError("Could not parse as Integer".to_string()),
+                    },
+                    Err(err) => RedisValue::SimpleError(err),
                 }
             }
             Some('$') => {
@@ -144,22 +138,20 @@ impl RedisValue {
                             RedisValue::NullBulkString
                         } else {
                             match length.parse() {
-                                Ok(length) => {
-                                    match consume_n_chars(iter, length) {
-                                        Ok(value) => {
-                                            match consume_crlf(iter) {
-                                                Ok(()) => RedisValue::BulkString(value),
-                                                Err(err) => RedisValue::SimpleError(err)
-                                            }
-                                        }
-                                        Err(err) => RedisValue::SimpleError(err)
-                                    }
+                                Ok(length) => match consume_n_chars(iter, length) {
+                                    Ok(value) => match consume_crlf(iter) {
+                                        Ok(()) => RedisValue::BulkString(value),
+                                        Err(err) => RedisValue::SimpleError(err),
+                                    },
+                                    Err(err) => RedisValue::SimpleError(err),
                                 },
-                                Err(_) => RedisValue::SimpleError("Could not parse as Integer".to_string())
+                                Err(_) => RedisValue::SimpleError(
+                                    "Could not parse as Integer".to_string(),
+                                ),
                             }
                         }
                     }
-                    Err(err) => RedisValue::SimpleError(err)
+                    Err(err) => RedisValue::SimpleError(err),
                 }
             }
             Some('*') => {
@@ -178,51 +170,41 @@ impl RedisValue {
                                         array.push(RedisValue::from_iter(iter));
                                     }
                                     RedisValue::Array(array)
-                                },
-                                Err(_) => RedisValue::SimpleError("Could not parse as Integer".to_string())
+                                }
+                                Err(_) => RedisValue::SimpleError(
+                                    "Could not parse as Integer".to_string(),
+                                ),
                             }
                         }
                     }
-                    Err(err) => RedisValue::SimpleError(err)
+                    Err(err) => RedisValue::SimpleError(err),
                 }
             }
             Some('_') => {
                 // Null
                 iter.next();
                 match consume_crlf(iter) {
-                    Ok(()) => {
-                        RedisValue::Null
-                    }
-                    Err(err) => RedisValue::SimpleError(err)
+                    Ok(()) => RedisValue::Null,
+                    Err(err) => RedisValue::SimpleError(err),
                 }
             }
-            Some('#') => {
-                match consume_until_crlf(iter) {
-                    Ok(value) => {
-                        match value.as_str() {
-                            "#t" => {
-                                RedisValue::Boolean(true)
-                            }
-                            "#f" => {
-                                RedisValue::Boolean(false)
-                            }
-                            _ => RedisValue::SimpleError("No valid boolean found".to_string())
-                        }
-                    }
-                    Err(err) => RedisValue::SimpleError(err)
-                }
-            }
+            Some('#') => match consume_until_crlf(iter) {
+                Ok(value) => match value.as_str() {
+                    "#t" => RedisValue::Boolean(true),
+                    "#f" => RedisValue::Boolean(false),
+                    _ => RedisValue::SimpleError("No valid boolean found".to_string()),
+                },
+                Err(err) => RedisValue::SimpleError(err),
+            },
             Some('(') => {
                 // Big Integer
                 iter.next();
                 match consume_until_crlf(iter) {
-                    Ok(value) => {
-                        match value.parse() {
-                            Ok(value) => RedisValue::BigInteger(value),
-                            Err(_) => RedisValue::SimpleError("Could not parse as Integer".to_string())
-                        }
-                    }
-                    Err(err) => RedisValue::SimpleError(err)
+                    Ok(value) => match value.parse() {
+                        Ok(value) => RedisValue::BigInteger(value),
+                        Err(_) => RedisValue::SimpleError("Could not parse as Integer".to_string()),
+                    },
+                    Err(err) => RedisValue::SimpleError(err),
                 }
             }
             Some('!') => {
@@ -234,22 +216,20 @@ impl RedisValue {
                             RedisValue::NullBulkString
                         } else {
                             match length.parse() {
-                                Ok(length) => {
-                                    match consume_n_chars(iter, length) {
-                                        Ok(value) => {
-                                            match consume_crlf(iter) {
-                                                Ok(()) => RedisValue::BulkString(value),
-                                                Err(err) => RedisValue::SimpleError(err)
-                                            }
-                                        }
-                                        Err(err) => RedisValue::SimpleError(err)
-                                    }
+                                Ok(length) => match consume_n_chars(iter, length) {
+                                    Ok(value) => match consume_crlf(iter) {
+                                        Ok(()) => RedisValue::BulkString(value),
+                                        Err(err) => RedisValue::SimpleError(err),
+                                    },
+                                    Err(err) => RedisValue::SimpleError(err),
                                 },
-                                Err(_) => RedisValue::SimpleError("Could not parse as Integer".to_string())
+                                Err(_) => RedisValue::SimpleError(
+                                    "Could not parse as Integer".to_string(),
+                                ),
                             }
                         }
                     }
-                    Err(err) => RedisValue::SimpleError(err)
+                    Err(err) => RedisValue::SimpleError(err),
                 }
             }
             Some('=') => {
@@ -261,35 +241,40 @@ impl RedisValue {
                             RedisValue::NullBulkString
                         } else {
                             match length.parse() {
-                                Ok(length) => {
-                                    match consume_n_chars(iter, length) {
-                                        Ok(value) => {
-                                            match consume_crlf(iter) {
-                                                Ok(()) => {
-                                                    let mut parts = value.split(':').into_iter();
-                                                    if let (Some(encoding), Some(contents)) = (parts.next(), parts.next()) {
-                                                        RedisValue::VerbatimString(encoding.to_string(), contents.to_string())
-                                                    } else {
-                                                        RedisValue::SimpleError("Invalid verbatim string".to_string())
-                                                    }
-                                                },
-                                                Err(err) => RedisValue::SimpleError(err)
+                                Ok(length) => match consume_n_chars(iter, length) {
+                                    Ok(value) => match consume_crlf(iter) {
+                                        Ok(()) => {
+                                            let mut parts = value.split(':').into_iter();
+                                            if let (Some(encoding), Some(contents)) =
+                                                (parts.next(), parts.next())
+                                            {
+                                                RedisValue::VerbatimString(
+                                                    encoding.to_string(),
+                                                    contents.to_string(),
+                                                )
+                                            } else {
+                                                RedisValue::SimpleError(
+                                                    "Invalid verbatim string".to_string(),
+                                                )
                                             }
                                         }
-                                        Err(err) => RedisValue::SimpleError(err)
-                                    }
+                                        Err(err) => RedisValue::SimpleError(err),
+                                    },
+                                    Err(err) => RedisValue::SimpleError(err),
                                 },
-                                Err(_) => RedisValue::SimpleError("Could not parse as Integer".to_string())
+                                Err(_) => RedisValue::SimpleError(
+                                    "Could not parse as Integer".to_string(),
+                                ),
                             }
                         }
                     }
-                    Err(err) => RedisValue::SimpleError(err)
+                    Err(err) => RedisValue::SimpleError(err),
                 }
             }
-            
+
             Some('~') => {
                 // Set
-                iter.next(); 
+                iter.next();
                 match consume_until_crlf(iter) {
                     Ok(length) => {
                         if length == "-1" {
@@ -306,14 +291,18 @@ impl RedisValue {
                                     for item in &set {
                                         let item_str = item.to_resp();
                                         if value.contains(&item_str) {
-                                            return RedisValue::SimpleError("Set is not unique".to_string())
+                                            return RedisValue::SimpleError(
+                                                "Set is not unique".to_string(),
+                                            );
                                         }
                                         value.push(item_str)
                                     }
 
                                     RedisValue::Set(set)
                                 }
-                                Err(_) => RedisValue::SimpleError("Invalid length for set".to_string()),
+                                Err(_) => {
+                                    RedisValue::SimpleError("Invalid length for set".to_string())
+                                }
                             }
                         }
                     }
@@ -337,14 +326,18 @@ impl RedisValue {
                                     }
                                     RedisValue::Push(array)
                                 }
-                                Err(_) => RedisValue::SimpleError("Invalid length for push".to_string()),
+                                Err(_) => {
+                                    RedisValue::SimpleError("Invalid length for push".to_string())
+                                }
                             }
                         }
                     }
                     Err(err) => RedisValue::SimpleError(err),
                 }
             }
-            _ => RedisValue::SimpleError("Invalid or empty character for value initializer".to_string())
+            _ => RedisValue::SimpleError(
+                "Invalid or empty character for value initializer".to_string(),
+            ),
         }
     }
 }
