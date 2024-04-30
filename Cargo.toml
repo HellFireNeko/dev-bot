@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+testrunner = [] # This is a flag to enable the test features
 
 [dependencies]
 actix = "0.13.3"

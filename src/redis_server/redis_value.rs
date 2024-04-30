@@ -1,8 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, hash::Hash};
 
 use crate::string_manip::{consume_crlf, consume_n_chars, consume_until_crlf};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RedisValue {
     SimpleString(String),
     SimpleError(String),
@@ -19,6 +19,28 @@ pub enum RedisValue {
     Map(HashMap<RedisValue, RedisValue>),
     Set(Vec<RedisValue>),
     Push(Vec<RedisValue>),
+}
+
+impl Hash for RedisValue {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            RedisValue::SimpleString(s) => s.hash(state),
+            RedisValue::SimpleError(s) => s.hash(state),
+            RedisValue::Integer(n) => n.hash(state),
+            RedisValue::BulkString(s) => s.hash(state),
+            RedisValue::NullBulkString => "".hash(state),
+            RedisValue::Array(v) => v.hash(state),
+            RedisValue::NullArray => "".hash(state),
+            RedisValue::Null => "".hash(state),
+            RedisValue::Boolean(b) => b.hash(state),
+            RedisValue::BigInteger(n) => n.hash(state),
+            RedisValue::BulkError(s) => s.hash(state),
+            RedisValue::VerbatimString(_, s) => s.hash(state),
+            RedisValue::Map(m) => "".hash(state),
+            RedisValue::Set(s) => s.hash(state),
+            RedisValue::Push(p) => p.hash(state),
+        }
+    }
 }
 
 impl RedisValue {

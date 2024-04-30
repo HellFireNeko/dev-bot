@@ -38,7 +38,7 @@ async fn main() {
         .init();
 
     // Executor client daemon
-    tokio::spawn(redis_server::execute());
+    let redis_thread = tokio::spawn(redis_server::execute());
     tokio::spawn(bot::execute());
     tokio::spawn(web_server::execute());
 
@@ -67,4 +67,6 @@ async fn main() {
             }
         }
     }
+
+    let _ = redis_thread.await;
 }
